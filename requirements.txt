@@ -1,0 +1,10 @@
+torch
+numpy
+transformers
+tokenizers
+datasets
+beautifulsoup4
+requests
+tqdm
+tiktoken
+wandb

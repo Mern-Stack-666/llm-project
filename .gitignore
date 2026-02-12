@@ -1,0 +1,13 @@
+# Virtual Environment
+.venv/
+__pycache__/
+*.pyc
+.env
+
+# Data (Too big for GitHub)
+data/raw/
+data/processed/
+data/tokenizer.json
+
+# Model Checkpoints (Too big for GitHub)
+out/
