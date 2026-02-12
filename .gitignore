@@ -1,8 +1,5 @@
 # Virtual Environment
-.venv/
-__pycache__/
-*.pyc
-.env
+
 
 # We are now allowing Data and Models via Git LFS
 # (Nothing in data/ or out/ is ignored anymore)
