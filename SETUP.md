@@ -13,7 +13,8 @@ Once the environment is created, install the required libraries (torch, numpy, e
 ```powershell
 .venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
-
+python -m venv .venv
+.venv\Scripts\python.exe -m pip install -r requirements.txt
 ---
 
 ### ⚠️ Note for Git LFS
