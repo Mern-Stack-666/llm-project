@@ -22,3 +22,7 @@ If you cloned this from GitHub, don't forget to run this once to download the ac
 ```powershell
 git lfs pull
 ```
+To start and resume the training use this command: 
+```powershell
+.venv\Scripts\python.exe -m src.training.train
+```
