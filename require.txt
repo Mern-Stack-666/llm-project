@@ -62,7 +62,7 @@ Installation: npm install langchain @langchain/core
 My Recommendation for your "Email Automation" App
 Since you are building an Email Automation tool, I recommend putting LangChain in the Next.js (Frontend) project (Option B).
 
-Here is why:
+Here's why:
 
 Your Next.js app will hold all your user data, email templates, and database connections.
 It's much easier to have LangChain pull a user's email history directly from your Next.js backend, format a prompt, and then send that final prompt to your Python LLM server just for the text generation.
