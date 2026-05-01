@@ -74,7 +74,9 @@ def train_tokenizer(input_files, vocab_size=32000, save_path="data/tokenizer.jso
     for t in tests:
         enc = tokenizer.encode(t)
         print(f"\n  '{t[:50]}...'")
-        print(f"    → {len(enc.ids)} tokens: {enc.tokens[:10]}...")
+        # FIX: guard against IndexError if sample tokenizes to fewer than 10 tokens
+        preview = enc.tokens[:min(10, len(enc.tokens))]
+        print(f"    → {len(enc.ids)} tokens: {preview}...")
 
 
 def train_from_hf_dataset(dataset_name, sample_size, vocab_size, save_path, lang=None):

@@ -182,7 +182,7 @@ def finetune():
     device_type = 'cuda' if 'cuda' in device else 'cpu'
     ptdtype = {'float32': torch.float32, 'bfloat16': torch.bfloat16, 'float16': torch.float16}[dtype]
     ctx = nullcontext() if device_type == 'cpu' else torch.amp.autocast(device_type=device_type, dtype=ptdtype)
-    scaler = torch.amp.GradScaler(enabled=(dtype == 'float16'))
+    scaler = torch.amp.GradScaler("cuda", enabled=(dtype == 'float16'))  # FIX: device arg required in PyTorch >= 2.3
     
     print("=" * 60)
     print("  GPT FINE-TUNING (Instruction Tuning)")
@@ -319,11 +319,12 @@ def finetune():
                 torch.save(ckpt, os.path.join(out_dir, 'ckpt.pt'))
         
         # Forward / backward
+        # FIX: fetch batch at top of loop so each micro-step uses its own data
         for micro_step in range(gradient_accumulation_steps):
+            X, Y = get_batch('train')
             with ctx:
                 _, loss = model(X, Y)
                 loss = loss / gradient_accumulation_steps
-            X, Y = get_batch('train')
             scaler.scale(loss).backward()
         
         if grad_clip != 0.0:

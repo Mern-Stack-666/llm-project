@@ -32,6 +32,13 @@ from src.model.gpt import GPT, GPTConfig
 # ──────────────────────────────────────────────────────────────────────────────
 _model = None
 _tokenizer = None
+
+
+def _to_python(val):
+    """Convert torch.Tensor scalars to native Python types so Pydantic can serialize them."""
+    if hasattr(val, 'item'):   # covers torch.Tensor of any dtype
+        return val.item()
+    return val
 _device = None
 _model_info = {}
 
@@ -81,13 +88,13 @@ def load_model(checkpoint_path: str, tokenizer_path: str, device: str = "auto"):
         "checkpoint": checkpoint_path,
         "device": _device,
         "parameters": f"{_model.get_num_params() / 1e6:.2f}M",
-        "vocab_size": model_args.get("vocab_size", "unknown"),
-        "block_size": model_args.get("block_size", "unknown"),
-        "n_layer": model_args.get("n_layer", "unknown"),
-        "n_head": model_args.get("n_head", "unknown"),
-        "n_embd": model_args.get("n_embd", "unknown"),
-        "iter_num": checkpoint.get("iter_num", "unknown"),
-        "best_val_loss": checkpoint.get("best_val_loss", "unknown"),
+        "vocab_size": _to_python(model_args.get("vocab_size", "unknown")),
+        "block_size": _to_python(model_args.get("block_size", "unknown")),
+        "n_layer": _to_python(model_args.get("n_layer", "unknown")),
+        "n_head": _to_python(model_args.get("n_head", "unknown")),
+        "n_embd": _to_python(model_args.get("n_embd", "unknown")),
+        "iter_num": _to_python(checkpoint.get("iter_num", "unknown")),
+        "best_val_loss": _to_python(checkpoint.get("best_val_loss", "unknown")),
     }
     
     print(f"Model loaded: {_model_info['parameters']} parameters")
@@ -129,13 +136,12 @@ def generate(
         top_k=top_k,
     )
     
-    # Decode
+    # Decode — FIX: slice by token count, not string length (BPE spacing can cause misalignment)
     generated_ids = output_ids[0].tolist()
+    prompt_len = len(encoded.ids)
+    new_ids = generated_ids[prompt_len:]
+    new_text = _tokenizer.decode(new_ids)
     full_text = _tokenizer.decode(generated_ids)
-    
-    # Extract only the new tokens
-    prompt_text = _tokenizer.decode(encoded.ids)
-    new_text = full_text[len(prompt_text):]
     
     # Handle stop tokens
     if stop_tokens:

@@ -107,10 +107,9 @@ def chat(
         with torch.no_grad():
             y = model.generate(x, max_new_tokens=max_new_tokens, temperature=temperature, top_k=top_k)
         
-        # Decode
-        full_text = tokenizer.decode(y[0].tolist())
-        prompt_decoded = tokenizer.decode(start_ids)
-        reply = full_text[len(prompt_decoded):]
+        # Decode — FIX: slice by token count, not string length (BPE can misalign)
+        new_ids = y[0].tolist()[len(start_ids):]
+        reply = tokenizer.decode(new_ids)
         
         # Clean up stop tokens
         for stop in ["<|endoftext|>", "<|user|>", "<|padding|>"]:

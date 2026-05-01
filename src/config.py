@@ -68,8 +68,16 @@ def _auto_cast(value: str):
 
 def _resolve_auto(config: dict) -> dict:
     """Resolve 'auto' device and dtype settings."""
-    import torch
-    
+    # FIX: torch may not be available in all contexts (e.g. pure data-prep scripts)
+    try:
+        import torch
+    except ImportError:
+        if config.get("device") == "auto":
+            config["device"] = "cpu"
+        if config.get("dtype") == "auto":
+            config["dtype"] = "float32"
+        return config
+
     if config.get("device") == "auto":
         if torch.cuda.is_available():
             config["device"] = "cuda"

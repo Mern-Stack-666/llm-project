@@ -94,7 +94,8 @@ def train():
     ctx = nullcontext() if device_type == 'cpu' else torch.amp.autocast(device_type=device_type, dtype=ptdtype)
 
     # Initialize a GradScaler. If enabled=False scaler is a no-op
-    scaler = torch.amp.GradScaler(enabled=(dtype == 'float16'))
+    # FIX: device must be passed as first arg in PyTorch >= 2.3
+    scaler = torch.amp.GradScaler("cuda", enabled=(dtype == 'float16'))
 
     # ─── Data Loading ─────────────────────────────────────────────────────
     train_bin = os.path.join(data_dir, 'train.bin')
@@ -243,7 +244,7 @@ def train():
                         'optimizer': optimizer.state_dict(),
                         'model_args': model_args,
                         'iter_num': iter_num,
-                        'best_val_loss': best_val_loss,
+                        'best_val_loss': float(best_val_loss),  # FIX: cast to Python float so Pydantic can serialize it
                         'config': cfg,
                     }
                     print(f"    → saving checkpoint to {out_dir}")
@@ -253,11 +254,12 @@ def train():
             break
 
         # Forward / backward with gradient accumulation
+        # FIX: fetch batch at the top so each micro-step trains on its own data
         for micro_step in range(gradient_accumulation_steps):
+            X, Y = get_batch('train')
             with ctx:
                 logits, loss = model(X, Y)
                 loss = loss / gradient_accumulation_steps
-            X, Y = get_batch('train')
             scaler.scale(loss).backward()
 
         # Gradient clipping

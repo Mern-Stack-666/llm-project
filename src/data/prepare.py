@@ -16,6 +16,7 @@ Usage:
 import os
 import re
 import argparse
+import itertools
 import numpy as np
 from tqdm import tqdm
 from tokenizers import Tokenizer
@@ -298,17 +299,14 @@ def process_single_dataset(name, tokenizer, train_path, val_path, streaming,
         if streaming:
             val_count = 5000
             print(f"  Streaming: first {val_count} docs → val, rest → train")
-            val_items, train_items = [], []
-            for i, item in enumerate(tqdm(full_split, desc="Splitting")):
-                if i < val_count:
-                    val_items.append(item)
-                else:
-                    train_items.append(item)
-                    if max_train_tokens and len(train_items) > max_train_tokens // 300:
-                        break
-            tokenize_and_export(tokenizer, val_items, val_path, text_key=text_key,
+            # FIX: use two independent iterators via itertools.islice so we never
+            # load the full dataset into RAM — keeps memory O(chunk_size), not O(dataset)
+            full_iter_a, full_iter_b = itertools.tee(full_split, 2)
+            val_iter = itertools.islice(full_iter_a, val_count)
+            train_iter = itertools.islice(full_iter_b, val_count, None)
+            tokenize_and_export(tokenizer, val_iter, val_path, text_key=text_key,
                                 max_tokens=max_val_tokens, desc=f"Val({name})", append=append)
-            tokenize_and_export(tokenizer, train_items, train_path, text_key=text_key,
+            tokenize_and_export(tokenizer, train_iter, train_path, text_key=text_key,
                                 max_tokens=max_train_tokens, desc=f"Train({name})", append=append)
         else:
             n = len(full_split)
