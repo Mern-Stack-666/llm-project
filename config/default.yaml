@@ -1,0 +1,85 @@
+# =============================================================================
+# LLM Project — Master Configuration
+# =============================================================================
+# All hyperparameters in one place. Override with CLI: --config path/to/custom.yaml
+
+# --- I/O ---
+out_dir: "out"
+eval_interval: 100          # evaluate & checkpoint every N steps
+log_interval: 1             # print loss every N steps
+eval_iters: 50              # batches to average for eval (was 10, now 50 for reliability)
+eval_only: false
+always_save_checkpoint: true
+init_from: "resume"         # "scratch" | "resume"
+
+# --- Data ---
+dataset: "openwebtext"      # dataset to use for pretraining
+data_dir: "data/processed"
+tokenizer_path: "data/tokenizer.json"
+raw_data_dir: "data/raw"
+
+# --- Batch / Sequence ---
+gradient_accumulation_steps: 4
+batch_size: 12
+block_size: 256
+
+# --- Model Architecture ---
+n_layer: 12
+n_head: 6
+n_embd: 384
+dropout: 0.0                # 0 for pretraining, 0.1+ for finetuning
+bias: false
+
+# --- Optimizer (AdamW) ---
+learning_rate: 1.0e-3
+max_iters: 20000
+weight_decay: 0.1
+beta1: 0.9
+beta2: 0.95
+grad_clip: 1.0
+
+# --- LR Schedule ---
+decay_lr: true
+warmup_iters: 500
+lr_decay_iters: 20000
+min_lr: 1.0e-4
+
+# --- DDP ---
+backend: "nccl"
+
+# --- System ---
+device: "auto"              # "auto" | "cuda" | "cpu" | "mps"
+dtype: "auto"               # "auto" | "float32" | "bfloat16" | "float16"
+compile: false              # PyTorch 2.0 torch.compile
+
+# --- Tokenizer Training ---
+vocab_size: 32000           # BPE vocab size (32k for code + multilingual coverage)
+
+# --- Scraper ---
+scraper_urls: []            # leave empty to use defaults in scraper.py
+
+# --- Fine-tuning ---
+finetune:
+  enabled: false
+  base_checkpoint: "out/ckpt.pt"
+  output_dir: "out/finetuned"
+  dataset: "tatsu-lab/alpaca"       # HuggingFace dataset for instruction tuning
+  dataset_split: "train"
+  max_iters: 5000
+  learning_rate: 2.0e-5
+  dropout: 0.1
+  warmup_iters: 100
+  eval_interval: 50
+  eval_iters: 20
+  batch_size: 8
+  gradient_accumulation_steps: 4
+  grad_clip: 1.0
+
+# --- Serving API ---
+serving:
+  host: "0.0.0.0"
+  port: 8000
+  checkpoint: "out/ckpt.pt"        # or "out/finetuned/ckpt.pt" after finetuning
+  max_new_tokens: 200
+  temperature: 0.8
+  top_k: 50
